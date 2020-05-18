@@ -27,9 +27,9 @@ def run():
     if not dst.is_dir():
         print(f'no directory at "{dst}", creating...')
         dst.mkdir()
-    pathgen = src.glob('**/*.kra')
+    pathgen = src.glob('**/[!.]*.kra')
     for path in pathgen:
-        print(path)
+        print(path.relative_to(src))
         pass
 
 if __name__ == '__main__':
