@@ -5,10 +5,12 @@ import shutils
 
 def get_args():
     parser = ArgumentParser('krita-exporter')
+    # TODO write help text
     parser.add_argument('src')
     parser.add_argument('dst')
     parser.add_argument('--format', default='png')
     parser.add_argument('--force', default=False, action='store_true')
+    parser.add_argument('--alt')
     return parser.parse_args()
 
 def err(text):
@@ -27,7 +29,7 @@ def run():
     src = Path(args.src)
     dst = Path(args.dst)
     if not krita_is_installed():
-        err('krita is not found in PATH. I guess you wouldn\'t be trying to run this if you don\'t have Krita installed, so something is weird. This should work when the command "which krita" runs successfully. if krita is called something else on your system, put that in the --alt option.')
+        err('krita is not found in PATH. I guess you wouldn\'t be trying to run this if you don\'t have Krita installed, so something is weird. This should work when the command "which krita" runs successfully. If krita is called something else on your system, put that in the --alt option.')
     if not src.is_dir():
         err(f'no directory at "{src}"')
     if dst.exists() and not dst.is_dir():
