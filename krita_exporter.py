@@ -6,6 +6,7 @@ def get_args():
     parser = ArgumentParser('krita-exporter')
     parser.add_argument('src')
     parser.add_argument('dst')
+    parser.add_argument('--format', default='png')
     return parser.parse_args()
 
 def err(text):
@@ -13,8 +14,7 @@ def err(text):
     sys.exit(1)
 
 def exec_export(src, dst, dry=True):
-    # TODO run command to export
-    pass
+    print(f'krita --export {src} --export-filename {dst};')
 
 def run():
     args = get_args()
@@ -28,9 +28,12 @@ def run():
         print(f'no directory at "{dst}", creating...')
         dst.mkdir()
     pathgen = src.glob('**/[!.]*.kra')
-    for path in pathgen:
-        print(path.relative_to(src))
-        pass
+    for src_path in pathgen:
+        relpath = src_path.relative_to(src)
+        dst_relpath = relpath.with_suffix(f'.{args.format}')
+        dst_path = dst / dst_relpath
+        #TODO create needed directories
+        exec_export(src_path, dst_path)
 
 if __name__ == '__main__':
     run()
