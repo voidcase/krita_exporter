@@ -44,8 +44,14 @@ def err(text: str):
     sys.exit(1)
 
 def export_from_krita(src: Union[str, Path], dst: Union[str, Path], alt_krita=None):
-    krita = alt_krita or 'krita'
-    return subprocess.Popen([krita, '--export', str(src), '--export-filename', str(dst)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    args = [krita, '--export', str(src), '--export-filename', str(dst)]
+    try:
+        krita = alt_krita or 'krita'
+        return subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except subprocess.CalledProcessError as e:
+        cmd = ' '.join(args)
+        err(f'Could not export "{src}".\n' +
+                f'the command was:{cmd}')
 
 def krita_is_installed() -> bool:
     return shutil.which('krita') is not None
@@ -76,7 +82,7 @@ def run():
         dst_path.parent.mkdir(parents=True, exist_ok=True)
         if args.force or not dst_path.exists():
             print(f'Exporting "{relpath}"...')
-            to_log = export_from_krita(src_path, dst_path)
+            export_from_krita(src_path, dst_path)
     print('Done.')
 
 
