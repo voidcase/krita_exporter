@@ -2,6 +2,8 @@ from argparse import ArgumentParser
 from pathlib import Path
 import sys
 import shutil
+import subprocess
+from typing import Union
 
 def get_args():
     parser = ArgumentParser('krita-exporter')
@@ -37,13 +39,13 @@ def get_args():
               You can specify it with this argument.')
     return parser.parse_args()
 
-def err(text):
+def err(text: str):
     print(f'ERROR: {text}', file=sys.stderr)
     sys.exit(1)
 
-def export_command(src, dst, dry=True, alt_krita=None):
+def export_from_krita(src: Union[str, Path], dst: Union[str, Path], alt_krita=None):
     krita = alt_krita or 'krita'
-    return f'{krita} --export {src} --export-filename {dst};'
+    return subprocess.Popen([krita, '--export', str(src), '--export-filename', str(dst)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 def krita_is_installed() -> bool:
     return shutil.which('krita') is not None
@@ -72,7 +74,10 @@ def run():
         dst_path = dst / dst_relpath
         dst_path.parent.mkdir(parents=True, exist_ok=True)
         if args.force or not dst_path.exists():
-            print(export_command(src_path, dst_path))
+            print(f'Exporting "{relpath}"...')
+            to_log = export_from_krita(src_path, dst_path)
+    print('Done.')
+
 
 if __name__ == '__main__':
     run()
