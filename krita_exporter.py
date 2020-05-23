@@ -54,6 +54,7 @@ def run():
     args = get_args()
     src = Path(args.src)
     dst = Path(args.dst)
+    export_format = args.format if args.format[0] != '.' else args.format[0]
     if not krita_is_installed():
         err('krita is not found in PATH. \
              I guess you wouldn\'t be trying to run this if you don\'t have Krita installed, \
