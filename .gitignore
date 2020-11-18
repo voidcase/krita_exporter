@@ -1,1 +1,3 @@
 links/
+__pycache__/
+*.egg-info/
