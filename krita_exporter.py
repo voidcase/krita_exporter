@@ -5,7 +5,7 @@ import shutil
 import subprocess
 from typing import Union
 import os
-import kraconvert
+from zipfile import ZipFile
 
 def get_args():
     parser = ArgumentParser('krita-exporter')
@@ -46,26 +46,10 @@ def err(text: str):
     sys.exit(1)
 
 def export_from_krita(src: Union[str, Path], dst: Union[str, Path], alt_krita=None):
-    krita = alt_krita or 'krita'
-    tmpdir = Path('./tmp_delete_dis')
-    tmpfile = tmpdir / 'exporting.png'
-    if tmpdir.is_dir():
-        tmpdir.rmdir()
-    tmpdir.mkdir()
-    args = [krita, '--export', str(src), '--export-filename', str(tmpfile)]
-    try:
-        print(f'running {args}')
-        proc = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if tmpfile.is_file():
-            print('copying file to dst')
-            os.rename(str(tmpfile), str(dst))
+    with ZipFile(src) as src_zip:
 
-    except subprocess.CalledProcessError as e:
-        cmd = ' '.join(args)
-        err(f'Could not export "{src}".\n' +
-                f'the command was:{cmd}')
-    finally:
-        tmpdir.rmdir()
+        src_zip.extract('mergedimage.png', '/tmp/')
+        Path('/tmp/mergedimage.png').rename(dst)
 
 def krita_is_installed() -> bool:
     return shutil.which('krita') is not None
