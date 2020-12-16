@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 import typing as T
 from zipfile import ZipFile
+from time import sleep
 
 def get_args():
     parser = ArgumentParser('krita-exporter')
@@ -27,10 +28,20 @@ def get_args():
         help='Export even those files which already have not been modified since the last export.'
     )
     parser.add_argument(
+        '--purge',
+        action='store_true',
+        help='empty destination folder before refilling'
+    )
+    parser.add_argument(
         '-c', '--confirm',
         default=False,
         action='store_true',
         help='manually confirm that the changed files are the ones you want to change',
+    )
+    parser.add_argument(
+        '-w', '--watch',
+        action='store_true',
+        help='poll directory for changes, run until exited.',
     )
     return parser.parse_args()
 
@@ -46,7 +57,7 @@ def export_kra(src: T.Union[str, Path], dst: T.Union[str, Path]):
         Path('/tmp/mergedimage.png').rename(dst)
 
 
-def only_updated(pathgen: T.Iterable(Path)) -> T.List[Path]:
+def only_updated(src, dst, pathgen: T.Iterable[Path], force) -> T.List[Path]:
     ret = []
     for src_path in pathgen:
         # Make destination dir
@@ -57,11 +68,18 @@ def only_updated(pathgen: T.Iterable(Path)) -> T.List[Path]:
 
         src_modified = getmtime(str(src_path))
         dst_modified = getmtime(str(dst_path)) if dst_path.is_file() else -1
-        if args.force or src_modified > dst_modified:
-            print(f'Exporting "{relpath}"...')
+        if force or src_modified > dst_modified:
             ret.append((src_path, dst_path))
     return ret
 
+
+def user_confirm_changes(path_pairs):
+    for src_path, dst_path in path_pairs:
+        print(f'{src_path} -> {dst_path}')
+    users_approval = yesno_prompt('Ready to export?')
+    if not users_approval:
+        print('Come back when you\'re ready.')
+        sys.exit(0)
 
 def yesno_prompt(question: str) -> bool:
     res = input(f'{question} [y/n]')
@@ -79,19 +97,30 @@ def run():
     if not dst.is_dir():
         print(f'no directory at "{dst}", creating...')
         dst.mkdir()
-    all_src_paths = src.glob('**/[!.]*.kra')
-    path_pairs = only_updated(all_src_paths)
-    if args.confirm:
-        for src_path, dst_path in path_pairs:
-            print(f'{src_path} -> {dst_path}')
-        users_approval = yesno_prompt('Ready to export?')
-        if not users_approval:
-            print('Come back when you\'re ready.')
-            sys.exit(0)
-    for src_path, dst_path in path_pairs:
-        relative_src_path = src_path.relative_to(src)
-        print(f'exporting "{relative_src_path}"')
-        export_kra(src_path, dst_path)
+    if args.watch:
+        poll_interval = 2
+        print(f'polling for changes every {poll_interval} seconds...')
+    while True:
+        try:
+            all_src_paths = src.glob('**/[!.]*.kra')
+            path_pairs = only_updated(src, dst, all_src_paths, force=args.force)
+            if len(path_pairs) == 0:
+                if args.watch:
+                    sleep(poll_interval)
+                    continue
+                else:
+                    print('nothing new to export')
+                    exit(0)
+            if args.confirm:
+                user_confirm_changes(path_pairs)
+            for src_path, dst_path in path_pairs:
+                relative_src_path = src_path.relative_to(src)
+                print(f'exporting "{relative_src_path}"')
+                export_kra(src_path, dst_path)
+            if not args.watch:
+                break
+        except KeyboardInterrupt:
+            break
     print('Done.')
 
 
