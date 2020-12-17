@@ -1,8 +1,6 @@
 # How to use
 
-Make sure that you have `krita` installed first. If it's called something else on your system for some reason, specify that name with the `--alt` flag.
-
-	python3 krita_exporter.py /dir/with/your/kra/file/tree /dir/where/you/want/your/exported/file/tree
+	krita-exporter /dir/with/your/kra/file/tree /dir/where/you/want/your/exported/file/tree
 
 So for example, if this is your source directory:
 
@@ -28,6 +26,14 @@ Your destination directory will look like this after running the command:
 			protagonist.png
 			enemy_skeleton.png
 
-Default export format is `png`. You can set it with `--format`.
+## optional arguments:
+
+	  -h, --help     show this help message and exit
+	  --force        Export even those files which already have not been modified
+					 since the last export.
+	  --purge        empty destination folder before refilling
+	  -c, --confirm  manually confirm that the changed files are the ones you want
+					 to change
+	  -w, --watch    poll directory for changes, run until exited.
 
 Beyond that just read the code, it's pretty small :)
